@@ -286,16 +286,52 @@ y = df['income']
 
 print(X.dtypes)
 
-imputer = SimpleImputer(strategy='mean')
-X_imputer = imputer.fit_transform(X)
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X_imputer)
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
 
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X_imputed)
+numeric_cols = X.select_dtypes(include=['int64', 'float64']).columns
+categorical_cols = X.select_dtypes(include=['object', 'category']).columns
 
+# Define the transformers
+numeric_transformer = SimpleImputer(strategy='mean')
+categorical_transformer = SimpleImputer(strategy='most_frequent')
+
+# Apply transformations to specific columns
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', numeric_transformer, numeric_cols),
+        ('cat', categorical_transformer, categorical_cols),
+    ]
+)
+
+# Transform the dataset
+X_imputed = preprocessor.fit_transform(X)
+
+# Apply the transformation and reconstruct the DataFrame
+X_imputed = preprocessor.fit_transform(X)
+X_imputed_df = pd.DataFrame(X_imputed, columns=numeric_cols.tolist() + categorical_cols.tolist())
+
+# Apply PCA only to numeric columns
+X_numeric = X_imputed_df[numeric_cols]
 pca = PCA(n_components=5)
-X_pca = pca.fit_transform(X)
+X_pca = pca.fit_transform(X_numeric)
+
+# Print results of PCA
+print("Explained variance by each component:", pca.explained_variance_ratio_)
+print("Transformed data shape:", X_pca.shape)
+
+# imputer = SimpleImputer(strategy='mean')
+# X_imputer = imputer.fit_transform(X)
+# scaler = StandardScaler()
+# X_scaled = scaler.fit_transform(X_imputer)
+
+# scaler = StandardScaler()
+# X_scaled = scaler.fit_transform(X_imputed)
+
+# pca = PCA(n_components=5)
+# X_pca = pca.fit_transform(X)
 
 X_train, X_test, y_train, y_test = train_test_split(X_pca, y, test_size=0.3, random_state=42)
 
